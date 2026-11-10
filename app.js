@@ -1,4 +1,4 @@
-// Import the functions you need from the SDKs you need
+import { getFirestore, collection, addDoc } from 'firebase/firestore';const db = getFirestore(); // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
