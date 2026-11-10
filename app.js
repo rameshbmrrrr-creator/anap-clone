@@ -16,7 +16,19 @@ const firebaseConfig = {
   measurementId: "G-5Q29SZRF8T"
 };
 
-// Initialize Firebase
+// Initialize Firebase 
+const form = document.querySelector('form');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+  try {
+    await addDoc(collection(db, "users"), data);
+    alert("Data saved successfully!");
+  } catch (e) {
+    console.error("Error adding document: ", e);
+  }
+});
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
