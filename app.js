@@ -18,33 +18,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-
-const form = document.querySelector('form'); 
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault(); 
-
-  const displayName = document.querySelector('input[type="text"]').value;
-  const email = document.querySelector('input[type="email"]').value; 
-  const password = document.querySelector('input[type="password"]').value;
-
-  try {
-    const docRef = await addDoc(collection(db, "users"), {
-      name: displayName,
-      email: email,
-      password: password,
-      timestamp: new Date()
-    });
-    
-    console.log("Data saved with ID: ", docRef.id);
-    alert("अकाउंट बन गया और डेटा Firestore में सेव हो गया!");
-    form.reset(); 
-    
-  } catch (error) {
-    console.error("Error adding document: ", error);
-    alert("डेटा सेव करने में एरर आया: " + error.message);
-  }
-});
 const $ = id => document.getElementById(id);
 let currentUser=null, isAdmin=false, signupMode=true, mediaFile=null, cameraStream=null, activeChat=null, stopMessages=null, stopStories=null, adminTab="users";
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -54,10 +27,36 @@ function showAuth(){ $("authScreen").classList.remove("hidden");$("app").classLi
 function showApp(){ $("authScreen").classList.add("hidden");$("app").classList.remove("hidden"); }
 function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="stories")loadStories();if(page==="friends")loadPeople();if(page==="chat")loadPeople(true);if(page==="admin"&&isAdmin)loadAdmin();}
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
+
 $("toggleAuth").onclick=()=>{signupMode=!signupMode;$("signupNameWrap").classList.toggle("hidden",!signupMode);$("authSubmit").textContent=signupMode?"Create account":"Log in";$("toggleAuth").textContent=signupMode?"Already have an account? Log in":"New here? Create account";$("authPassword").autocomplete=signupMode?"new-password":"current-password"};
-$("authForm").onsubmit=async e=>{e.preventDefault();const email=$("authEmail").value.trim(),password=$("authPassword").value;try{if(signupMode){const name=$("authName").value.trim();if(!name)throw Error("Enter a display name");const cred=await createUserWithEmailAndPassword(auth,email,password);await updateProfile(cred.user,{displayName:name});await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,photoURL:"",blocked:false,createdAt:serverTimestamp()});}else await signInWithEmailAndPassword(auth,email,password);}catch(err){toast(friendly(err))}};
+
+// यहीं पर आपका असली अकाउंट बनने और Firestore में डेटा सेव होने का कोड है
+$("authForm").onsubmit=async e=>{
+  e.preventDefault();
+  const email=$("authEmail").value.trim(),password=$("authPassword").value;
+  try{
+    if(signupMode){
+      const name=$("authName").value.trim();
+      if(!name)throw Error("Enter a display name");
+      // 1. अकाउंट बनाना
+      const cred=await createUserWithEmailAndPassword(auth,email,password);
+      await updateProfile(cred.user,{displayName:name});
+      // 2. Firestore में डेटाबेस सेव करना
+      await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,photoURL:"",blocked:false,createdAt:serverTimestamp()});
+      toast("Account created successfully!");
+    }else {
+      await signInWithEmailAndPassword(auth,email,password);
+      toast("Logged in successfully!");
+    }
+  }catch(err){
+    toast(friendly(err))
+  }
+};
+
 function friendly(e){const map={"auth/email-already-in-use":"Email is already registered.","auth/invalid-credential":"Incorrect email or password.","auth/weak-password":"Use at least 8 characters.","auth/invalid-email":"Enter a valid email.","auth/too-many-requests":"Too many attempts. Try later.","permission-denied":"Permission denied. Check Firebase Rules and your account role."};return map[e.code]||e.message||"Something went wrong";}
-onAuthStateChanged(auth,async u=>{stopLive();if(!u){currentUser=null;showAuth();return;}try{const token=await u.getIdTokenResult(true);isAdmin=token.claims.admin===true;currentUser=u;const profile=await getDoc(doc(db,"users",u.uid));if(profile.exists()&&profile.data().blocked){await signOut(auth);toast("This account is blocked.");return;}showApp();$("sideName").textContent=u.displayName||u.email;$("sideEmail").textContent=u.email;$("topName").textContent=u.displayName||u.email;$("sideAvatar").textContent=initials(u.displayName||u.email);$("topAvatar").textContent=initials(u.displayName||u.email);$("profileAvatar").textContent=initials(u.displayName||u.email);$("profileName").textContent=u.displayName||"User";$("profileEmail").textContent=u.email;$("newDisplayName").value=u.displayName||"";$("adminNav").classList.toggle("hidden",!isAdmin);$("mobileAdminNav").classList.toggle("hidden",!isAdmin);go("camera");}catch(e){toast(friendly(e));}});
+
+onAuthStateChanged(auth,async u=>{stopLive();if(!u){currentUser=null;showAuth();return;}try{const token=await u.getIdTokenResult(true);isAdmin=token.claims.admin===true;currentUser=u;const profile=await getDoc(doc(db,"users",u.uid));if(profile.exists()&&profile.data().blocked){await signOut(auth);toast("This account is blocked.");return;}showApp();$("sideName").textContent=u.displayName||u.email;$("sideEmail").textContent=u.email;$("topName").textContent=u.displayName||u.email;$("sideAvatar").textContent=initials(u.displayName\vert{}\vert{}u.email);$("topAvatar").textContent=initials(u.displayName||u.email);$("profileAvatar").textContent=initials(u.displayName\vert{}\vert{}u.email);$("profileName").textContent=u.displayName||"User";$("profileEmail").textContent=u.email;$("newDisplayName").value=u.displayName||"";$("adminNav").classList.toggle("hidden",!isAdmin);$("mobileAdminNav").classList.toggle("hidden",!isAdmin);go("camera");}catch(e){toast(friendly(e));}});
+
 function stopLive(){if(stopMessages){stopMessages();stopMessages=null}if(stopStories){stopStories=null}stopCamera();}
 $("logoutBtn").onclick=()=>signOut(auth);
 $("saveProfile").onclick=async()=>{const name=$("newDisplayName").value.trim();if(name.length<2)return toast("Name must be at least 2 characters");try{await updateProfile(currentUser,{displayName:name});await updateDoc(doc(db,"users",currentUser.uid),{name});$("profileName").textContent=name;$("sideName").textContent=name;$("topName").textContent=name;toast("Profile saved");}catch(e){toast(friendly(e))}};
@@ -69,29 +68,4 @@ $("startCamera").onclick=async()=>{try{cameraStream=await navigator.mediaDevices
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
 $("captureBtn").onclick=()=>{if(!cameraStream)return toast("Start the camera first");const v=$("cameraVideo"),c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{mediaFile=new File([blob],"snap.jpg",{type:"image/jpeg"});previewFile(mediaFile)},"image/jpeg",.88)};
 $("discardMedia").onclick=()=>{mediaFile=null;stopCamera();["imagePreview","videoPreview","cameraVideo"].forEach(id=>$(id).classList.add("hidden"));$("cameraEmpty").classList.remove("hidden");$("publishStory").disabled=true};
-$("publishStory").onclick=async()=>{if(!mediaFile||!currentUser)return;try{const safeName=mediaFile.name.replace(/[^a-zA-Z0-9._-]/g,"_");const path=`stories/${currentUser.uid}/${Date.now()}_${safeName}`;const storageRef=ref(storage,path);await uploadBytes(storageRef,mediaFile,{contentType:mediaFile.type});const url=await getDownloadURL(storageRef);await addDoc(collection(db,"stories"),{uid:currentUser.uid,ownerName:currentUser.displayName||currentUser.email,mediaUrl:url,storagePath:path,contentType:mediaFile.type,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});$("discardMedia").click();toast("Story posted!");go("stories");}catch(e){toast(friendly(e))}};
-
-// Stories live feed
-function loadStories(){if(stopStories)stopStories();const q=query(collection(db,"stories"),where("expiresAt",">",Timestamp.now()),orderBy("expiresAt","asc"),limit(100));stopStories=onSnapshot(q,snap=>{const rows=snap.docs.map(d=>({id:d.id,...d.data()}));$("storiesGrid").innerHTML=rows.length?rows.map(s=>`<article class="story-card"><div class="story-media">${s.contentType?.startsWith("image/")?`<img src="${esc(s.mediaUrl)}" alt="Story">`:`<video src="${esc(s.mediaUrl)}" controls></video>`}</div><b>${esc(s.ownerName||"User")}</b><small>${s.uid===currentUser.uid?"Your story":"Community story"}</small>${s.uid===currentUser.uid?`<button class="secondary" data-delete-story="${s.id}">Delete my story</button>`:`<button class="secondary" data-report-story="${s.id}">Report</button>`}</article>`).join(""):'<div class="admin-empty">No active stories yet.</div>';document.querySelectorAll("[data-delete-story]").forEach(b=>b.onclick=()=>deleteStory(b.dataset.deleteStory));document.querySelectorAll("[data-report-story]").forEach(b=>b.onclick=()=>report("story",b.dataset.reportStory));},e=>toast(friendly(e)));}
-async function deleteStory(id){try{const d=await getDoc(doc(db,"stories",id));if(!d.exists())return;const s=d.data();if(s.uid!==currentUser.uid&&!isAdmin)return toast("Not allowed");await deleteDoc(doc(db,"stories",id));if(s.storagePath)await deleteObject(ref(storage,s.storagePath)).catch(()=>{});toast("Story deleted");}catch(e){toast(friendly(e))}}
-
-// People and chat
-let peopleCache=[];
-async function loadPeople(forChat=false){try{const snap=await getDocs(query(collection(db,"users"),limit(100)));peopleCache=snap.docs.map(d=>d.data()).filter(p=>p.uid!==currentUser.uid&&!p.blocked);renderPeople(forChat);}catch(e){toast(friendly(e))}}
-function renderPeople(forChat=false){const target=forChat?$("chatPeople"):$("usersGrid");const filter=(forChat?$("peopleSearch").value:$("userSearch").value).toLowerCase();const list=peopleCache.filter(p=>(p.name||"").toLowerCase().includes(filter)||(p.email||"").toLowerCase().includes(filter));target.innerHTML=list.map(p=>forChat?`<div class="person-row" data-open-chat="${p.uid}"><div class="avatar">${initials(p.name)}</div><b>${esc(p.name||p.email)}</b></div>`:`<article class="person-card"><div class="avatar">${initials(p.name)}</div><div class="person-info"><b>${esc(p.name||"User")}</b><small>${esc(p.email||"")}</small></div><button class="primary" data-start-chat="${p.uid}">Chat</button><button class="secondary" data-report-user="${p.uid}">Report</button></article>`).join("")||'<div class="admin-empty">No people found.</div>';document.querySelectorAll("[data-open-chat],[data-start-chat]").forEach(b=>b.onclick=()=>openChat(b.dataset.openChat||b.dataset.startChat));document.querySelectorAll("[data-report-user]").forEach(b=>b.onclick=()=>report("user",b.dataset.reportUser));}
-$("userSearch").oninput=()=>renderPeople(false);$("peopleSearch").oninput=()=>renderPeople(true);
-function chatId(a,b){return [a,b].sort().join("_")}
-async function openChat(uid){try{const other=peopleCache.find(p=>p.uid===uid)|| (await getDoc(doc(db,"users",uid))).data();if(!other)return;activeChat={id:chatId(currentUser.uid,uid),other};$("chatBlank").classList.add("hidden");$("chatBox").classList.remove("hidden");$("chatTitle").textContent=other.name||other.email;await setDoc(doc(db,"chats",activeChat.id),{members:[currentUser.uid,uid],memberNames:{[currentUser.uid]:currentUser.displayName||currentUser.email,[uid]:other.name||other.email},updatedAt:serverTimestamp()},{merge:true});if(stopMessages)stopMessages();const q=query(collection(db,"chats",activeChat.id,"messages"),orderBy("createdAt","asc"),limit(150));stopMessages=onSnapshot(q,snap=>{$("messages").innerHTML=snap.docs.map(d=>{const m=d.data(),mine=m.senderId===currentUser.uid;return `<div class="bubble ${mine?"mine":""}">${esc(m.text)}</div>`}).join("");$("messages").scrollTop=$("messages").scrollHeight;},e=>toast(friendly(e)));}catch(e){toast(friendly(e))}}
-$("messageForm").onsubmit=async e=>{e.preventDefault();const text=$("messageText").value.trim();if(!text||!activeChat)return;try{await addDoc(collection(db,"chats",activeChat.id,"messages"),{senderId:currentUser.uid,text,createdAt:serverTimestamp()});await updateDoc(doc(db,"chats",activeChat.id),{lastMessage:text,updatedAt:serverTimestamp()});$("messageText").value="";}catch(err){toast(friendly(err))}};
-async function report(type,targetId){const reason=prompt("Tell us why you are reporting this "+type+":");if(!reason?.trim())return;try{await addDoc(collection(db,"reports"),{type,targetId,reason:reason.trim().slice(0,1000),reporterId:currentUser.uid,reporterEmail:currentUser.email,status:"open",createdAt:serverTimestamp()});toast("Report sent to the moderation team");}catch(e){toast(friendly(e))}}
-
-// Admin
-document.querySelectorAll("[data-admin-tab]").forEach(b=>b.onclick=()=>{adminTab=b.dataset.adminTab;document.querySelectorAll("[data-admin-tab]").forEach(x=>x.classList.toggle("selected",x===b));renderAdminTab()});
-async function loadAdmin(){if(!isAdmin)return toast("Admin access required");try{const [u,s,r]=await Promise.all([getDocs(query(collection(db,"users"),limit(500))),getDocs(query(collection(db,"stories"),limit(500))),getDocs(query(collection(db,"reports"),where("status","==","open"),limit(500)))]);$("statUsers").textContent=u.size;$("statStories").textContent=s.size;$("statReports").textContent=r.size;window.adminData={users:u.docs.map(d=>d.data()),stories:s.docs.map(d=>({id:d.id,...d.data()})),reports:r.docs.map(d=>({id:d.id,...d.data()}))};renderAdminTab();}catch(e){$("adminContent").textContent=friendly(e);}}
-function renderAdminTab(){if(!isAdmin||!window.adminData)return;const data=window.adminData;let html="";if(adminTab==="users"){html=`<table class="admin-table"><thead><tr><th>User</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead><tbody>${data.users.map(u=>`<tr><td>${esc(u.name||"")}</td><td>${esc(u.email||"")}</td><td>${u.blocked?"Blocked":"Active"}</td><td><button data-block="${u.uid}" data-state="${u.blocked?"true":"false"}">${u.blocked?"Unblock":"Block"}</button><button class="danger" data-delete-user="${u.uid}">Delete</button></td></tr>`).join("")}</tbody></table>`;}else if(adminTab==="stories"){html=`<table class="admin-table"><thead><tr><th>Owner</th><th>Type</th><th>Created</th><th>Action</th></tr></thead><tbody>${data.stories.map(s=>`<tr><td>${esc(s.ownerName)}</td><td>${esc(s.contentType)}</td><td>${s.createdAt?.toDate?.().toLocaleString()||"—"}</td><td><button class="danger" data-admin-delete-story="${s.id}">Delete</button></td></tr>`).join("")}</tbody></table>`;}else if(adminTab==="reports"){html=`<table class="admin-table"><thead><tr><th>Type</th><th>Target</th><th>Reason</th><th>Action</th></tr></thead><tbody>${data.reports.map(r=>`<tr><td>${esc(r.type)}</td><td>${esc(r.targetId)}</td><td>${esc(r.reason)}</td><td><button data-resolve="${r.id}">Resolve</button></td></tr>`).join("")}</tbody></table>`;}else{html='<p class="muted">Recent conversation metadata and messages are shown below. Access is restricted to the Admin role and must be disclosed to users.</p><button id="loadChats" class="secondary">Load recent chats</button><div id="adminChats"></div>';} $("adminContent").innerHTML=html||'<div class="admin-empty">Nothing here yet.</div>';
-document.querySelectorAll("[data-block]").forEach(b=>b.onclick=()=>setBlocked(b.dataset.block,b.dataset.state!=="true"));document.querySelectorAll("[data-delete-user]").forEach(b=>b.onclick=()=>deleteUserAccount(b.dataset.deleteUser));document.querySelectorAll("[data-admin-delete-story]").forEach(b=>b.onclick=()=>deleteStoryAdmin(b.dataset.adminDeleteStory));document.querySelectorAll("[data-resolve]").forEach(b=>b.onclick=()=>resolveReport(b.dataset.resolve));const load=$("loadChats");if(load)load.onclick=loadAdminChats;}
-async function setBlocked(uid,blocked){if(uid===currentUser.uid)return toast("You cannot block your own admin account");try{await (await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js")).httpsCallable((await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js")).getFunctions(app),"adminSetBlocked")({uid,blocked});toast(blocked?"User blocked":"User unblocked");await loadAdmin();}catch(e){toast(friendly(e))}}
-async function deleteUserAccount(uid){if(uid===currentUser.uid)return toast("You cannot delete your own admin account");if(!confirm("Permanently delete this user account? Their Auth account and profile will be deleted. Related content cleanup may need review."))return;try{const mod=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js");await mod.httpsCallable(mod.getFunctions(app),"adminDeleteUser")({uid});toast("User account deleted");await loadAdmin();}catch(e){toast(friendly(e))}}
-async function deleteStoryAdmin(id){if(!confirm("Delete this story?"))return;try{const s=await getDoc(doc(db,"stories",id));if(s.exists()){const d=s.data();await deleteDoc(doc(db,"stories",id));if(d.storagePath)await deleteObject(ref(storage,d.storagePath)).catch(()=>{});}toast("Story deleted");await loadAdmin();}catch(e){toast(friendly(e))}}
-async function resolveReport(id){try{await updateDoc(doc(db,"reports",id),{status:"resolved",resolvedAt:serverTimestamp(),resolvedBy:currentUser.uid});toast("Report resolved");await loadAdmin();}catch(e){toast(friendly(e))}}
-async function loadAdminChats(){try{const snap=await getDocs(query(collection(db,"chats"),orderBy("updatedAt","desc"),limit(30)));const host=$("adminChats");host.innerHTML=snap.docs.map(d=>`<div class="admin-row"><b>${esc((d.data().memberNames||{}).user||"Conversation")}</b> <small>${esc(d.data().lastMessage||"No messages")}</small><button data-view-chat="${d.id}">View messages</button><div id="chat-${d.id}"></div></div>`).join("");document.querySelectorAll("[data-view-chat]").forEach(b=>b.onclick=async()=>{const ms=await getDocs(query(collection(db,"chats",b.dataset.viewChat,"messages"),orderBy("createdAt","asc"),limit(100)));$("chat-"+b.dataset.viewChat).innerHTML=ms.docs.map(m=>`<p>${esc(m.data().senderId)}: ${esc(m.data().text)}</p>`).join("")||"No messages";});}catch(e){toast(friendly(e))}}
+$("publishStory").onclick=async()=>{if(!mediaFile||!currentUser)return;try{const safeName=mediaFile.name.replace(/[^a-zA-Z0-9._-]/g,"_");const path=`stories/${currentUser.uid}/${Date.now()}_${safeName}`;const storageRef=ref(storage,path);await uploadBytes(storageRef,mediaFile,{contentType:mediaFile.type});const url=await getDownloadURL
