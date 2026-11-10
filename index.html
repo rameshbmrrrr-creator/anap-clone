@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#fffc00"><title>SnapClone</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="authScreen" class="auth-screen">
+    <form id="authForm" class="auth-card">
+      <div class="logo">👻</div><h1>SnapClone</h1><p class="muted">Share the moment. Keep it real.</p>
+      <div id="signupNameWrap"><label>Display name<input id="authName" maxlength="30" placeholder="Your name"></label></div>
+      <label>Email<input id="authEmail" type="email" autocomplete="username" required placeholder="you@example.com"></label>
+      <label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters"></label>
+      <button class="primary" id="authSubmit">Create account</button>
+      <button type="button" id="toggleAuth" class="link-btn">Already have an account? Log in</button>
+      <p class="tiny muted">Use a unique password. Firebase Authentication secures your account.</p>
+    </form>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand">👻 <b>SnapClone</b></div>
+      <button data-page="camera" class="nav active">📸 <span>Camera</span></button>
+      <button data-page="stories" class="nav">⭕ <span>Stories</span></button>
+      <button data-page="chat" class="nav">💬 <span>Chat</span></button>
+      <button data-page="friends" class="nav">👥 <span>People</span></button>
+      <button data-page="profile" class="nav">🙂 <span>Profile</span></button>
+      <button data-page="admin" id="adminNav" class="nav hidden">🛡️ <span>Admin Panel</span></button>
+      <div class="side-bottom"><div class="who"><div class="avatar" id="sideAvatar">S</div><div><b id="sideName">User</b><small id="sideEmail"></small></div></div><button id="logoutBtn" class="secondary full">Sign out</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><button class="mobile-brand" data-page="camera">👻 SnapClone</button><div class="top-spacer"></div><div class="account-chip"><div class="avatar small" id="topAvatar">S</div><span id="topName">User</span></div></header>
+      <section id="cameraPage" class="page active">
+        <div class="heading"><div><small>CREATE A MOMENT</small><h2>Camera</h2></div></div>
+        <div class="camera-layout">
+          <div class="panel camera-panel">
+            <div class="camera-view"><video id="cameraVideo" autoplay playsinline muted class="hidden"></video><img id="imagePreview" class="hidden" alt="Preview"><video id="videoPreview" class="hidden" controls></video><div id="cameraEmpty"><div class="lens">◎</div><h3>Your next snap starts here</h3><p>Start your camera or upload a photo/video.</p></div></div>
+            <div class="camera-buttons"><label class="round">＋<input id="mediaFile" type="file" accept="image/*,video/*" hidden></label><button id="captureBtn" class="capture" title="Capture photo"></button><button id="startCamera" class="round">⌁</button></div>
+            <div class="split"><button id="discardMedia" class="secondary">Clear</button><button id="publishStory" class="primary" disabled>Post to Story</button></div>
+          </div>
+          <div class="panel tip"><h3>Your story</h3><p>Stories are stored online and are set to expire after 24 hours. You can remove your own story at any time.</p><button class="primary" data-page="stories">View stories</button></div>
+        </div>
+      </section>
+      <section id="storiesPage" class="page"><div class="heading"><div><small>THE LATEST</small><h2>Stories</h2></div></div><div id="storiesGrid" class="grid"></div></section>
+      <section id="chatPage" class="page"><div class="heading"><div><small>SAY HELLO</small><h2>Chat</h2></div></div><div class="chat-layout panel"><div class="people-list"><input id="peopleSearch" placeholder="Search people"><div id="chatPeople"></div></div><div class="conversation"><div id="chatBlank" class="empty"><div>💬</div><h3>Select someone to chat</h3><p>Messages are synced through Firebase.</p></div><div id="chatBox" class="hidden chat-box"><div class="chat-title" id="chatTitle"></div><div id="messages" class="messages"></div><form id="messageForm" class="send-form"><input id="messageText" maxlength="2000" placeholder="Write a message..." required><button class="primary">Send</button></form></div></div></div></section>
+      <section id="friendsPage" class="page"><div class="heading"><div><small>FIND YOUR PEOPLE</small><h2>People</h2></div></div><input id="userSearch" class="search" placeholder="Search users by name or email"><div id="usersGrid" class="grid"></div></section>
+      <section id="profilePage" class="page"><div class="heading"><div><small>YOUR SPACE</small><h2>Profile</h2></div></div><div class="profile panel"><div class="profile-avatar" id="profileAvatar">S</div><h2 id="profileName"></h2><p id="profileEmail" class="muted"></p><label>Display name<input id="newDisplayName" maxlength="30"></label><button id="saveProfile" class="primary">Save profile</button></div></section>
+      <section id="adminPage" class="page"><div class="heading"><div><small>OWNER CONTROL CENTER</small><h2>Admin Dashboard</h2></div><span class="admin-badge">ADMIN</span></div>
+        <div class="stats"><div class="panel"><small>Total users</small><b id="statUsers">—</b></div><div class="panel"><small>Active stories</small><b id="statStories">—</b></div><div class="panel"><small>Open reports</small><b id="statReports">—</b></div></div>
+        <div class="admin-tabs"><button class="selected" data-admin-tab="users">Users</button><button data-admin-tab="stories">Stories</button><button data-admin-tab="reports">Reports</button><button data-admin-tab="chats">Chats</button></div>
+        <div id="adminContent" class="panel admin-content">Loading admin data…</div>
+        <p class="tiny muted">Admin moderation access is disclosed in the app policy. Use it only for legitimate safety and support needs.</p>
+      </section>
+    </main>
+    <nav class="mobile-nav"><button data-page="camera" class="active">📸<small>Camera</small></button><button data-page="stories">⭕<small>Stories</small></button><button data-page="chat">💬<small>Chat</small></button><button data-page="friends">👥<small>People</small></button><button data-page="profile">🙂<small>Profile</small></button><button id="mobileAdminNav" data-page="admin" class="hidden">🛡️<small>Admin</small></button></nav>
+  </div>
+  <div id="toast" class="toast"></div>
+  <dialog id="storyDialog"><button id="closeStory" class="close">×</button><div id="storyDialogBody"></div></dialog>
+  <script type="module" src="app.js"></script>
+</body></html>
