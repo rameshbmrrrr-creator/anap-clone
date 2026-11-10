@@ -18,6 +18,33 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+
+const form = document.querySelector('form'); 
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault(); 
+
+  const displayName = document.querySelector('input[type="text"]').value;
+  const email = document.querySelector('input[type="email"]').value; 
+  const password = document.querySelector('input[type="password"]').value;
+
+  try {
+    const docRef = await addDoc(collection(db, "users"), {
+      name: displayName,
+      email: email,
+      password: password,
+      timestamp: new Date()
+    });
+    
+    console.log("Data saved with ID: ", docRef.id);
+    alert("अकाउंट बन गया और डेटा Firestore में सेव हो गया!");
+    form.reset(); 
+    
+  } catch (error) {
+    console.error("Error adding document: ", error);
+    alert("डेटा सेव करने में एरर आया: " + error.message);
+  }
+});
 const $ = id => document.getElementById(id);
 let currentUser=null, isAdmin=false, signupMode=true, mediaFile=null, cameraStream=null, activeChat=null, stopMessages=null, stopStories=null, adminTab="users";
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
