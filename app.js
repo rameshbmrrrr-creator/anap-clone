@@ -1,11 +1,8 @@
-import { getFirestore, collection, addDoc } from 'firebase/firestore';const db = getFirestore(); // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCLHCtvS8X7T_42cIrue4yGJA8zKb95UZI",
   authDomain: "snap-clone-5deb4.firebaseapp.com",
@@ -16,25 +13,11 @@ const firebaseConfig = {
   measurementId: "G-5Q29SZRF8T"
 };
 
-// Initialize Firebase 
-const form = document.querySelector('form');
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const formData = new FormData(form);
-  const data = Object.fromEntries(formData.entries());
-  try {
-    await addDoc(collection(db, "users"), data);
-    alert("Data saved successfully!");
-  } catch (e) {
-    console.error("Error adding document: ", e);
-  }
-});
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
-import { firebaseConfig } from "./firebase-config.js";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app), storage = getStorage(app);
 const $ = id => document.getElementById(id);
 let currentUser=null, isAdmin=false, signupMode=true, mediaFile=null, cameraStream=null, activeChat=null, stopMessages=null, stopStories=null, adminTab="users";
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -48,7 +31,7 @@ $("toggleAuth").onclick=()=>{signupMode=!signupMode;$("signupNameWrap").classLis
 $("authForm").onsubmit=async e=>{e.preventDefault();const email=$("authEmail").value.trim(),password=$("authPassword").value;try{if(signupMode){const name=$("authName").value.trim();if(!name)throw Error("Enter a display name");const cred=await createUserWithEmailAndPassword(auth,email,password);await updateProfile(cred.user,{displayName:name});await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,photoURL:"",blocked:false,createdAt:serverTimestamp()});}else await signInWithEmailAndPassword(auth,email,password);}catch(err){toast(friendly(err))}};
 function friendly(e){const map={"auth/email-already-in-use":"Email is already registered.","auth/invalid-credential":"Incorrect email or password.","auth/weak-password":"Use at least 8 characters.","auth/invalid-email":"Enter a valid email.","auth/too-many-requests":"Too many attempts. Try later.","permission-denied":"Permission denied. Check Firebase Rules and your account role."};return map[e.code]||e.message||"Something went wrong";}
 onAuthStateChanged(auth,async u=>{stopLive();if(!u){currentUser=null;showAuth();return;}try{const token=await u.getIdTokenResult(true);isAdmin=token.claims.admin===true;currentUser=u;const profile=await getDoc(doc(db,"users",u.uid));if(profile.exists()&&profile.data().blocked){await signOut(auth);toast("This account is blocked.");return;}showApp();$("sideName").textContent=u.displayName||u.email;$("sideEmail").textContent=u.email;$("topName").textContent=u.displayName||u.email;$("sideAvatar").textContent=initials(u.displayName||u.email);$("topAvatar").textContent=initials(u.displayName||u.email);$("profileAvatar").textContent=initials(u.displayName||u.email);$("profileName").textContent=u.displayName||"User";$("profileEmail").textContent=u.email;$("newDisplayName").value=u.displayName||"";$("adminNav").classList.toggle("hidden",!isAdmin);$("mobileAdminNav").classList.toggle("hidden",!isAdmin);go("camera");}catch(e){toast(friendly(e));}});
-function stopLive(){if(stopMessages){stopMessages();stopMessages=null}if(stopStories){stopStories();stopStories=null}stopCamera();}
+function stopLive(){if(stopMessages){stopMessages();stopMessages=null}if(stopStories){stopStories=null}stopCamera();}
 $("logoutBtn").onclick=()=>signOut(auth);
 $("saveProfile").onclick=async()=>{const name=$("newDisplayName").value.trim();if(name.length<2)return toast("Name must be at least 2 characters");try{await updateProfile(currentUser,{displayName:name});await updateDoc(doc(db,"users",currentUser.uid),{name});$("profileName").textContent=name;$("sideName").textContent=name;$("topName").textContent=name;toast("Profile saved");}catch(e){toast(friendly(e))}};
 
@@ -75,7 +58,7 @@ async function openChat(uid){try{const other=peopleCache.find(p=>p.uid===uid)|| 
 $("messageForm").onsubmit=async e=>{e.preventDefault();const text=$("messageText").value.trim();if(!text||!activeChat)return;try{await addDoc(collection(db,"chats",activeChat.id,"messages"),{senderId:currentUser.uid,text,createdAt:serverTimestamp()});await updateDoc(doc(db,"chats",activeChat.id),{lastMessage:text,updatedAt:serverTimestamp()});$("messageText").value="";}catch(err){toast(friendly(err))}};
 async function report(type,targetId){const reason=prompt("Tell us why you are reporting this "+type+":");if(!reason?.trim())return;try{await addDoc(collection(db,"reports"),{type,targetId,reason:reason.trim().slice(0,1000),reporterId:currentUser.uid,reporterEmail:currentUser.email,status:"open",createdAt:serverTimestamp()});toast("Report sent to the moderation team");}catch(e){toast(friendly(e))}}
 
-// Admin: claims are verified by Firebase, not by client-side email checks.
+// Admin
 document.querySelectorAll("[data-admin-tab]").forEach(b=>b.onclick=()=>{adminTab=b.dataset.adminTab;document.querySelectorAll("[data-admin-tab]").forEach(x=>x.classList.toggle("selected",x===b));renderAdminTab()});
 async function loadAdmin(){if(!isAdmin)return toast("Admin access required");try{const [u,s,r]=await Promise.all([getDocs(query(collection(db,"users"),limit(500))),getDocs(query(collection(db,"stories"),limit(500))),getDocs(query(collection(db,"reports"),where("status","==","open"),limit(500)))]);$("statUsers").textContent=u.size;$("statStories").textContent=s.size;$("statReports").textContent=r.size;window.adminData={users:u.docs.map(d=>d.data()),stories:s.docs.map(d=>({id:d.id,...d.data()})),reports:r.docs.map(d=>({id:d.id,...d.data()}))};renderAdminTab();}catch(e){$("adminContent").textContent=friendly(e);}}
 function renderAdminTab(){if(!isAdmin||!window.adminData)return;const data=window.adminData;let html="";if(adminTab==="users"){html=`<table class="admin-table"><thead><tr><th>User</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead><tbody>${data.users.map(u=>`<tr><td>${esc(u.name||"")}</td><td>${esc(u.email||"")}</td><td>${u.blocked?"Blocked":"Active"}</td><td><button data-block="${u.uid}" data-state="${u.blocked?"true":"false"}">${u.blocked?"Unblock":"Block"}</button><button class="danger" data-delete-user="${u.uid}">Delete</button></td></tr>`).join("")}</tbody></table>`;}else if(adminTab==="stories"){html=`<table class="admin-table"><thead><tr><th>Owner</th><th>Type</th><th>Created</th><th>Action</th></tr></thead><tbody>${data.stories.map(s=>`<tr><td>${esc(s.ownerName)}</td><td>${esc(s.contentType)}</td><td>${s.createdAt?.toDate?.().toLocaleString()||"—"}</td><td><button class="danger" data-admin-delete-story="${s.id}">Delete</button></td></tr>`).join("")}</tbody></table>`;}else if(adminTab==="reports"){html=`<table class="admin-table"><thead><tr><th>Type</th><th>Target</th><th>Reason</th><th>Action</th></tr></thead><tbody>${data.reports.map(r=>`<tr><td>${esc(r.type)}</td><td>${esc(r.targetId)}</td><td>${esc(r.reason)}</td><td><button data-resolve="${r.id}">Resolve</button></td></tr>`).join("")}</tbody></table>`;}else{html='<p class="muted">Recent conversation metadata and messages are shown below. Access is restricted to the Admin role and must be disclosed to users.</p><button id="loadChats" class="secondary">Load recent chats</button><div id="adminChats"></div>';} $("adminContent").innerHTML=html||'<div class="admin-empty">Nothing here yet.</div>';
