@@ -10,7 +10,8 @@
     <form id="authForm" class="auth-card">
       <div class="logo">👻</div><h1>SnapClone</h1><p class="muted">Share the moment. Keep it real.</p>
       <div id="signupNameWrap"><label>Display name<input id="authName" maxlength="30" placeholder="Your name"></label></div>
-      <label>Email<input id="authEmail" type="email" autocomplete="username" required placeholder="you@example.com"></label>
+<input type="text" id="authUsername" placeholder="Username (e.g. ramesh123)" required autocomplete="off">
+
       <label>Password<input id="authPassword" type="password" minlength="8" autocomplete="current-password" required placeholder="At least 8 characters"></label>
       <button class="primary" id="authSubmit">Create account</button>
       <button type="button" id="toggleAuth" class="link-btn">Already have an account? Log in</button>
