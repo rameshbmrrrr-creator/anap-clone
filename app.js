@@ -179,3 +179,18 @@ $("messageForm").onsubmit = async e => {
     $("messageText").value = "";
   } catch (err) { toast("Error sending"); }
 };
+
+// --- SAVE TO GALLERY FEATURE ---
+$("downloadBtn").onclick = () => {
+  if(!mediaFile) return;
+  const url = URL.createObjectURL(mediaFile);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "SnapClone_" + Date.now() + ".jpg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast("Saved to phone gallery!");
+};
+
+
