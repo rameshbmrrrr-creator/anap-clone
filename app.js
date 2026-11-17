@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCLHCtvS8X7T_42cIrue4yGJA8zKb95UZI",
@@ -30,7 +30,6 @@ function showApp(){ $("authScreen").classList.add("hidden");$("app").classList.r
 function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="stories")loadStories();if(page==="friends")loadPeople();if(page==="chat")loadPeople(true);}
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
 
-// Toggle Login / Signup
 $("toggleAuth").onclick=()=>{
   signupMode=!signupMode;
   $("signupFields").classList.toggle("hidden",!signupMode);
@@ -38,53 +37,33 @@ $("toggleAuth").onclick=()=>{
   $("toggleAuth").textContent=signupMode?"Already have an account? Log in":"New here? Create account";
 };
 
-// Forgot Password Logic
 $("forgotPassBtn").onclick = async () => {
   const email = $("authEmail").value.trim();
-  if (!email) {
-    toast("Please enter your Email Address first!");
-    $("authEmail").focus();
-    return;
-  }
+  if (!email) { toast("Please enter your Email Address first!"); $("authEmail").focus(); return; }
   try {
     await sendPasswordResetEmail(auth, email);
-    toast("Password reset link sent to your email! Check Inbox/Spam.");
-  } catch (err) {
-    toast("Error: Make sure this email is registered.");
-  }
+    toast("Password reset link sent to your email!");
+  } catch (err) { toast("Error: Make sure this email is registered."); }
 };
 
-// Signup & Login Form Submit
 $("authForm").onsubmit=async e=>{
   e.preventDefault();
   const email = $("authEmail").value.trim();
   const password = $("authPassword").value;
-  
   try {
     if(signupMode){
       const name = $("authName").value.trim() || "New User"; 
       let username = $("authUsername").value.trim().toLowerCase().replace(/\s+/g, '');
       if(!username) username = email.split('@')[0];
-      
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, {displayName: name});
-      await setDoc(doc(db,"users",cred.user.uid),{ 
-        uid: cred.user.uid, 
-        name: name, 
-        username: username, 
-        email: email, 
-        createdAt: serverTimestamp() 
-      });
+      await setDoc(doc(db,"users",cred.user.uid),{ uid: cred.user.uid, name: name, username: username, email: email, createdAt: serverTimestamp() });
       toast("Account created!");
     } else {
       await signInWithEmailAndPassword(auth, email, password);
       toast("Logged in!");
     }
-  } catch(err) { 
-    if(err.code === "auth/email-already-in-use") toast("Email is already registered. Try logging in.");
-    else if(err.code === "auth/invalid-credential") toast("Wrong email or password!");
-    else toast(err.message);
-  }
+  } catch(err) { toast(err.message); }
 };
 
 onAuthStateChanged(auth,async u=>{
@@ -100,27 +79,25 @@ onAuthStateChanged(auth,async u=>{
 $("logoutBtn").onclick=()=>signOut(auth);
 $("saveProfile").onclick=async()=>{const name=$("newDisplayName").value.trim();if(name.length<2)return toast("Name too short");await updateProfile(currentUser,{displayName:name});await updateDoc(doc(db,"users",currentUser.uid),{name});$("profileName").textContent=name;toast("Profile saved");};
 
-// CAMERA, STORIES & BEAUTY SMOOTH
+// CAMERA & MEDIA
 $("mediaFile").onchange=e=>{mediaFile=e.target.files[0]||null;if(!mediaFile)return;previewFile(mediaFile);e.target.value=""};
-function previewFile(file){stopCamera();$("cameraEmpty").classList.add("hidden");$("cameraVideo").classList.add("hidden");$("imagePreview").classList.add("hidden");$("videoPreview").classList.add("hidden");const url=URL.createObjectURL(file);if(file.type.startsWith("image/")){$("imagePreview").src=url;$("imagePreview").classList.remove("hidden")}else{$("videoPreview").src=url;$("videoPreview").classList.remove("hidden")}$("publishStory").disabled=false;}
-$("startCamera").onclick=async()=>{try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});$("cameraVideo").srcObject=cameraStream;$("cameraVideo").classList.remove("hidden");$("cameraEmpty").classList.add("hidden");$("imagePreview").classList.add("hidden");$("videoPreview").classList.add("hidden");mediaFile=null;$("publishStory").disabled=true;}catch(e){toast("Camera permission unavailable.")}};
+function previewFile(file){stopCamera();$("cameraEmpty").classList.add("hidden");$("cameraVideo").classList.add("hidden");$("imagePreview").classList.add("hidden");$("videoPreview").classList.add("hidden");const url=URL.createObjectURL(file);if(file.type.startsWith("image/")){$("imagePreview").src=url;$("imagePreview").classList.remove("hidden")}else{$("videoPreview").src=url;$("videoPreview").classList.remove("hidden")}}
+$("startCamera").onclick=async()=>{try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});$("cameraVideo").srcObject=cameraStream;$("cameraVideo").classList.remove("hidden");$("cameraEmpty").classList.add("hidden");$("imagePreview").classList.add("hidden");$("videoPreview").classList.add("hidden");mediaFile=null;}catch(e){toast("Camera unavailable.")}};
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
 $("captureBtn").onclick=()=>{if(!cameraStream)return;const v=$("cameraVideo"),c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{mediaFile=new File([blob],"snap.jpg",{type:"image/jpeg"});previewFile(mediaFile)},"image/jpeg",.88)};
-$("discardMedia").onclick=()=>{mediaFile=null;stopCamera();["imagePreview","videoPreview","cameraVideo"].forEach(id=>$(id).classList.add("hidden"));$("cameraEmpty").classList.remove("hidden");$("publishStory").disabled=true};
+$("discardMedia").onclick=()=>{mediaFile=null;stopCamera();["imagePreview","videoPreview","cameraVideo"].forEach(id=>$(id).classList.add("hidden"));$("cameraEmpty").classList.remove("hidden");};
 
 // Save to Gallery
 $("downloadBtn").onclick = () => { if(!mediaFile) return; const a = document.createElement("a"); a.href = URL.createObjectURL(mediaFile); a.download = "SnapClone_" + Date.now() + ".jpg"; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast("Saved to gallery!"); };
 
-// HD Face Smoothing Feature
+// Beauty Effect
 $("beautyBtn").onclick = () => {
   if(!mediaFile) return;
-  const img = new Image();
-  const url = URL.createObjectURL(mediaFile);
+  const img = new Image(); const url = URL.createObjectURL(mediaFile);
   img.src = url;
   img.onload = () => {
     const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
+    canvas.width = img.width; canvas.height = img.height;
     const ctx = canvas.getContext("2d");
     ctx.filter = "brightness(1.08) contrast(0.95) saturate(1.1) blur(0.5px)";
     ctx.drawImage(img, 0, 0);
@@ -132,12 +109,53 @@ $("beautyBtn").onclick = () => {
   };
 };
 
-$("publishStory").onclick=async()=>{if(!mediaFile||!currentUser)return;try{const path=`stories/${currentUser.uid}/${Date.now()}`;const storageRef=ref(storage,path);await uploadBytes(storageRef,mediaFile,{contentType:mediaFile.type});const url=await getDownloadURL(storageRef);await addDoc(collection(db,"stories"),{uid:currentUser.uid,ownerName:currentUser.displayName||"User",mediaUrl:url,storagePath:path,contentType:mediaFile.type,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});$("discardMedia").click();toast("Story posted!");go("stories");}catch(e){toast("Error posting")}};
-function loadStories(){if(stopStories)stopStories();const q=query(collection(db,"stories"),where("expiresAt",">",Timestamp.now()),orderBy("expiresAt","asc"),limit(100));stopStories=onSnapshot(q,snap=>{const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(s => s.uid === currentUser.uid || friendsList.includes(s.uid));$("storiesGrid").innerHTML=rows.length?rows.map(s=>`<article class="story-card"><div style="height:100%;width:100%;position:absolute;top:0;left:0;">${s.contentType?.startsWith("image/")?`<img src="${esc(s.mediaUrl)}" style="width:100%;height:100%;object-fit:cover;">`:`<video src="${esc(s.mediaUrl)}" style="width:100%;height:100%;object-fit:cover;" controls></video>`}</div><b>${esc(s.ownerName)}</b>${s.uid===currentUser.uid?`<button data-delete-story="${s.id}" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:10px;padding:5px 10px;">Delete</button>`:''}</article>`).join(""):'<div style="padding:15px; color:#666;">No active stories.</div>';document.querySelectorAll("[data-delete-story]").forEach(b=>b.onclick=()=>deleteStory(b.dataset.deleteStory));});}
+// OPEN SEND SNAP MODAL (Choose friend to send captured photo)
+$("openSendModalBtn").onclick = async () => {
+  if(!mediaFile) return;
+  await loadPeople(false, true); // load friends for modal selection
+  $("sendSnapModal").classList.remove("hidden");
+};
+
+async function sendSnapToFriend(friendUid) {
+  try {
+    toast("Sending snap...");
+    const path = `snaps/${currentUser.uid}_${Date.now()}`;
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, mediaFile, { contentType: mediaFile.type });
+    const url = await getDownloadURL(storageRef);
+    
+    const chId = chatId(currentUser.uid, friendUid);
+    await setDoc(doc(db, "chats", chId), { members: [currentUser.uid, friendUid], updatedAt: serverTimestamp() }, { merge: true });
+    
+    await addDoc(collection(db, "chats", chId, "messages"), { 
+      senderId: currentUser.uid, 
+      text: "📷 [Snap]", 
+      mediaUrl: url, 
+      createdAt: serverTimestamp() 
+    });
+    
+    $("sendSnapModal").classList.add("hidden");
+    $("discardMedia").click();
+    toast("Snap sent successfully! 🚀");
+    go("chat");
+    openChat(friendUid);
+  } catch(e) { toast("Error sending snap"); }
+}
+
+// STORIES
+function loadStories(){
+  if(stopStories)stopStories();
+  const q=query(collection(db,"stories"),where("expiresAt",">",Timestamp.now()),orderBy("expiresAt","asc"),limit(100));
+  stopStories=onSnapshot(q,snap=>{
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(s => s.uid === currentUser.uid || friendsList.includes(s.uid));
+    $("storiesGrid").innerHTML=rows.length?rows.map(s=>`<article class="story-card"><div style="height:100%;width:100%;position:absolute;top:0;left:0;">${s.contentType?.startsWith("image/")?`<img src="${esc(s.mediaUrl)}" style="width:100%;height:100%;object-fit:cover;">`:`<video src="${esc(s.mediaUrl)}" style="width:100%;height:100%;object-fit:cover;" controls></video>`}</div><b>${esc(s.ownerName)}</b>${s.uid===currentUser.uid?`<button data-delete-story="${s.id}" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:10px;padding:5px 10px;">Delete</button>`:''}</article>`).join(""):'<div style="padding:15px; color:#666;">No active stories.</div>';
+    document.querySelectorAll("[data-delete-story]").forEach(b=>b.onclick=()=>deleteStory(b.dataset.deleteStory));
+  });
+}
 async function deleteStory(id){try{await deleteDoc(doc(db,"stories",id));toast("Deleted");}catch(e){}}
 
 // FRIENDS & CHAT
-async function loadPeople(forChat = false) {
+async function loadPeople(forChat = false, forModal = false) {
   try {
     const usersSnap = await getDocs(query(collection(db, "users"), limit(100)));
     peopleCache = usersSnap.docs.map(d => d.data()).filter(p => p.uid !== currentUser.uid);
@@ -152,8 +170,28 @@ async function loadPeople(forChat = false) {
         else pendingReceived.push({ reqId: d.id, uid: otherUid });
       }
     });
-    renderPeople(forChat);
+    if(forModal) renderModalFriends();
+    else renderPeople(forChat);
   } catch (e) { console.log(e); }
+}
+
+function renderModalFriends() {
+  const myFriends = peopleCache.filter(p => friendsList.includes(p.uid));
+  $("friendsSelectList.hidden") // safety check
+  const target = $("friendsSelectList");
+  target.innerHTML = myFriends.map(p => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid #eee;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-weight:bold;">${initials(p.name)}</div>
+        <b>${esc(p.name)}</b>
+      </div>
+      <button class="primary" data-send-snap-to="${p.uid}" style="padding:8px 16px;">Send ➔</button>
+    </div>
+  `).join("") || '<div style="padding:20px; text-align:center; color:#666;">No friends found. Add friends first!</div>';
+  
+  document.querySelectorAll("[data-send-snap-to]").forEach(b => {
+    b.onclick = () => sendSnapToFriend(b.dataset.sendSnapTo);
+  });
 }
 
 function renderPeople(forChat = false) {
@@ -163,11 +201,6 @@ function renderPeople(forChat = false) {
   if (forChat) {
     const myFriends = peopleCache.filter(p => friendsList.includes(p.uid) && ((p.name || "").toLowerCase().includes(filter) || (p.username || "").toLowerCase().includes(filter)));
     target.innerHTML = myFriends.map((p, index) => {
-      const c = index % 3;
-      let color = "red", text = "New Snap · 13m", icon = "status-sq red";
-      if(c === 1) { color = "purple"; text = "2 New Snaps · 1h"; icon = "status-sq purple"; }
-      if(c === 2) { color = "blue"; text = "New Chat · 2m"; icon = "status-sq blue"; }
-      
       return `
       <div class="person-row" data-open-chat="${p.uid}">
         <div class="avatar-wrap">
@@ -175,16 +208,14 @@ function renderPeople(forChat = false) {
         </div>
         <div class="chat-details">
           <b>${esc(p.name || p.username)}</b>
-          <div class="chat-status ${color}">
-            <div class="${icon}"></div> 
-            <span>${text}</span>
+          <div class="chat-status red">
+            <div class="status-sq red"></div> 
+            <span>Tap to chat & view snaps</span>
           </div>
         </div>
-        <div class="chat-action">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-        </div>
+        <div class="chat-action" style="font-size:22px; color:#ed3b55;">📷</div>
       </div>
-    `}).join("") || '<div style="padding:20px; text-align:center; color:#888;">No friends to show. Add some!</div>';
+    `}).join("") || '<div style="padding:20px; text-align:center; color:#888;">No friends in chat. Add friends from the 👥 tab!</div>';
     document.querySelectorAll("[data-open-chat]").forEach(b => b.onclick = () => openChat(b.dataset.openChat));
     return;
   }
@@ -241,7 +272,12 @@ async function openChat(uid) {
     if (stopMessages) stopMessages();
     const q = query(collection(db, "chats", activeChat.id, "messages"), orderBy("createdAt", "asc"), limit(150));
     stopMessages = onSnapshot(q, snap => {
-      $("messages").innerHTML = snap.docs.map(d => { const m = d.data(), mine = m.senderId === currentUser.uid; return `<div class="bubble ${mine ? "mine" : ""}">${esc(m.text)}</div>`; }).join("");
+      $("messages").innerHTML = snap.docs.map(d => { 
+        const m = d.data(), mine = m.senderId === currentUser.uid; 
+        let content = esc(m.text);
+        if(m.mediaUrl) content = `<img src="${esc(m.mediaUrl)}" style="max-width:100%; border-radius:12px; margin-bottom:5px; display:block;"><span style="font-size:12px;">${esc(m.text)}</span>`;
+        return `<div class="bubble ${mine ? "mine" : ""}">${content}</div>`; 
+      }).join("");
       $("messages").scrollTop = $("messages").scrollHeight;
     });
   } catch (e) { console.log(e); }
