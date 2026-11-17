@@ -36,18 +36,19 @@ $("authForm").onsubmit=async e=>{
   const email=$("authEmail").value.trim(),password=$("authPassword").value;
   try{
     if(signupMode){
-      const name=$("authName").value.trim();
-      if(!name)throw Error("Enter a display name");
-      // 1. अकाउंट बनाना
+      const nameField = $("authName"); 
+      const name = nameField ? nameField.value.trim() : "New User"; 
+      
       const cred=await createUserWithEmailAndPassword(auth,email,password);
       await updateProfile(cred.user,{displayName:name});
-      // 2. Firestore में डेटाबेस सेव करना
+      
       await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,photoURL:"",blocked:false,createdAt:serverTimestamp()});
       toast("Account created successfully!");
     }else {
       await signInWithEmailAndPassword(auth,email,password);
       toast("Logged in successfully!");
     }
+
   }catch(err){
     toast(friendly(err))
   }
