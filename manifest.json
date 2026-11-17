@@ -1,0 +1,17 @@
+{
+  "name": "SnapClone",
+  "short_name": "SnapClone",
+  "description": "My Snapchat Clone App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fffc00",
+  "theme_color": "#fffc00",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3128/3128210.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
