@@ -100,14 +100,38 @@ onAuthStateChanged(auth,async u=>{
 $("logoutBtn").onclick=()=>signOut(auth);
 $("saveProfile").onclick=async()=>{const name=$("newDisplayName").value.trim();if(name.length<2)return toast("Name too short");await updateProfile(currentUser,{displayName:name});await updateDoc(doc(db,"users",currentUser.uid),{name});$("profileName").textContent=name;toast("Profile saved");};
 
-// CAMERA & STORIES
+// CAMERA, STORIES & BEAUTY SMOOTH
 $("mediaFile").onchange=e=>{mediaFile=e.target.files[0]||null;if(!mediaFile)return;previewFile(mediaFile);e.target.value=""};
 function previewFile(file){stopCamera();$("cameraEmpty").classList.add("hidden");$("cameraVideo").classList.add("hidden");$("imagePreview").classList.add("hidden");$("videoPreview").classList.add("hidden");const url=URL.createObjectURL(file);if(file.type.startsWith("image/")){$("imagePreview").src=url;$("imagePreview").classList.remove("hidden")}else{$("videoPreview").src=url;$("videoPreview").classList.remove("hidden")}$("publishStory").disabled=false;}
 $("startCamera").onclick=async()=>{try{cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});$("cameraVideo").srcObject=cameraStream;$("cameraVideo").classList.remove("hidden");$("cameraEmpty").classList.add("hidden");$("imagePreview").classList.add("hidden");$("videoPreview").classList.add("hidden");mediaFile=null;$("publishStory").disabled=true;}catch(e){toast("Camera permission unavailable.")}};
 function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null}}
 $("captureBtn").onclick=()=>{if(!cameraStream)return;const v=$("cameraVideo"),c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;c.getContext("2d").drawImage(v,0,0);c.toBlob(blob=>{mediaFile=new File([blob],"snap.jpg",{type:"image/jpeg"});previewFile(mediaFile)},"image/jpeg",.88)};
 $("discardMedia").onclick=()=>{mediaFile=null;stopCamera();["imagePreview","videoPreview","cameraVideo"].forEach(id=>$(id).classList.add("hidden"));$("cameraEmpty").classList.remove("hidden");$("publishStory").disabled=true};
+
+// Save to Gallery
 $("downloadBtn").onclick = () => { if(!mediaFile) return; const a = document.createElement("a"); a.href = URL.createObjectURL(mediaFile); a.download = "SnapClone_" + Date.now() + ".jpg"; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast("Saved to gallery!"); };
+
+// HD Face Smoothing Feature
+$("beautyBtn").onclick = () => {
+  if(!mediaFile) return;
+  const img = new Image();
+  const url = URL.createObjectURL(mediaFile);
+  img.src = url;
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.filter = "brightness(1.08) contrast(0.95) saturate(1.1) blur(0.5px)";
+    ctx.drawImage(img, 0, 0);
+    canvas.toBlob(blob => {
+      mediaFile = new File([blob], "smooth_snap.jpg", { type: "image/jpeg" });
+      previewFile(mediaFile);
+      toast("✨ HD Face Smoothing Applied!");
+    }, "image/jpeg", 0.92);
+  };
+};
+
 $("publishStory").onclick=async()=>{if(!mediaFile||!currentUser)return;try{const path=`stories/${currentUser.uid}/${Date.now()}`;const storageRef=ref(storage,path);await uploadBytes(storageRef,mediaFile,{contentType:mediaFile.type});const url=await getDownloadURL(storageRef);await addDoc(collection(db,"stories"),{uid:currentUser.uid,ownerName:currentUser.displayName||"User",mediaUrl:url,storagePath:path,contentType:mediaFile.type,createdAt:serverTimestamp(),expiresAt:Timestamp.fromMillis(Date.now()+24*60*60*1000)});$("discardMedia").click();toast("Story posted!");go("stories");}catch(e){toast("Error posting")}};
 function loadStories(){if(stopStories)stopStories();const q=query(collection(db,"stories"),where("expiresAt",">",Timestamp.now()),orderBy("expiresAt","asc"),limit(100));stopStories=onSnapshot(q,snap=>{const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(s => s.uid === currentUser.uid || friendsList.includes(s.uid));$("storiesGrid").innerHTML=rows.length?rows.map(s=>`<article class="story-card"><div style="height:100%;width:100%;position:absolute;top:0;left:0;">${s.contentType?.startsWith("image/")?`<img src="${esc(s.mediaUrl)}" style="width:100%;height:100%;object-fit:cover;">`:`<video src="${esc(s.mediaUrl)}" style="width:100%;height:100%;object-fit:cover;" controls></video>`}</div><b>${esc(s.ownerName)}</b>${s.uid===currentUser.uid?`<button data-delete-story="${s.id}" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:10px;padding:5px 10px;">Delete</button>`:''}</article>`).join(""):'<div style="padding:15px; color:#666;">No active stories.</div>';document.querySelectorAll("[data-delete-story]").forEach(b=>b.onclick=()=>deleteStory(b.dataset.deleteStory));});}
 async function deleteStory(id){try{await deleteDoc(doc(db,"stories",id));toast("Deleted");}catch(e){}}
