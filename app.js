@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, deleteDoc, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
@@ -23,36 +23,80 @@ let currentUser=null, signupMode=true, mediaFile=null, cameraStream=null, active
 let peopleCache = [], friendsList = [], pendingSent = [], pendingReceived = [];
 
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function toast(s){$("toast").textContent=s;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2500)}
+function toast(s){$("toast").textContent=s;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),3000)}
 function initials(s){return (s||"?").slice(0,1).toUpperCase()}
 function showAuth(){ $("authScreen").classList.remove("hidden");$("app").classList.add("hidden"); }
 function showApp(){ $("authScreen").classList.add("hidden");$("app").classList.remove("hidden"); }
 function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(page+"Page").classList.add("active");document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));if(page==="stories")loadStories();if(page==="friends")loadPeople();if(page==="chat")loadPeople(true);}
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.page)));
 
-$("toggleAuth").onclick=()=>{signupMode=!signupMode;$("signupNameWrap").classList.toggle("hidden",!signupMode);$("authSubmit").textContent=signupMode?"Create account":"Log in";$("toggleAuth").textContent=signupMode?"Already have an account? Log in":"New here? Create account";};
+// Toggle Login / Signup
+$("toggleAuth").onclick=()=>{
+  signupMode=!signupMode;
+  $("signupFields").classList.toggle("hidden",!signupMode);
+  $("authSubmit").textContent=signupMode?"Create account":"Log in";
+  $("toggleAuth").textContent=signupMode?"Already have an account? Log in":"New here? Create account";
+};
 
+// Forgot Password Logic
+$("forgotPassBtn").onclick = async () => {
+  const email = $("authEmail").value.trim();
+  if (!email) {
+    toast("Please enter your Email Address first!");
+    $("authEmail").focus();
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    toast("Password reset link sent to your email! Check Inbox/Spam.");
+  } catch (err) {
+    toast("Error: Make sure this email is registered.");
+  }
+};
+
+// Signup & Login Form Submit
 $("authForm").onsubmit=async e=>{
   e.preventDefault();
-  let username = $("authUsername").value.trim().toLowerCase().replace(/\s+/g, '');
+  const email = $("authEmail").value.trim();
   const password = $("authPassword").value;
-  const dummyEmail = username + "@snapclone.local";
+  
   try {
     if(signupMode){
       const name = $("authName").value.trim() || "New User"; 
-      if(!username) throw Error("Username needed");
-      const cred = await createUserWithEmailAndPassword(auth, dummyEmail, password);
+      let username = $("authUsername").value.trim().toLowerCase().replace(/\s+/g, '');
+      if(!username) username = email.split('@')[0];
+      
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, {displayName: name});
-      await setDoc(doc(db,"users",cred.user.uid),{ uid: cred.user.uid, name: name, username: username, dummyEmail: dummyEmail, createdAt: serverTimestamp() });
+      await setDoc(doc(db,"users",cred.user.uid),{ 
+        uid: cred.user.uid, 
+        name: name, 
+        username: username, 
+        email: email, 
+        createdAt: serverTimestamp() 
+      });
       toast("Account created!");
     } else {
-      await signInWithEmailAndPassword(auth, dummyEmail, password);
+      await signInWithEmailAndPassword(auth, email, password);
       toast("Logged in!");
     }
-  } catch(err) { toast(err.message.includes("use") ? "Username taken." : "Invalid username/password."); }
+  } catch(err) { 
+    if(err.code === "auth/email-already-in-use") toast("Email is already registered. Try logging in.");
+    else if(err.code === "auth/invalid-credential") toast("Wrong email or password!");
+    else toast(err.message);
+  }
 };
 
-onAuthStateChanged(auth,async u=>{if(stopMessages)stopMessages();if(stopStories)stopStories();stopCamera();if(!u){currentUser=null;showAuth();return;}currentUser=u;showApp();$("profileName").textContent=u.displayName||"User";$("newDisplayName").value=u.displayName||"";go("camera");});
+onAuthStateChanged(auth,async u=>{
+  if(stopMessages)stopMessages();if(stopStories)stopStories();stopCamera();
+  if(!u){currentUser=null;showAuth();return;}
+  currentUser=u;showApp();
+  $("profileName").textContent=u.displayName||"User";
+  $("profileEmailDisplay").textContent=u.email||"";
+  $("newDisplayName").value=u.displayName||"";
+  go("camera");
+});
+
 $("logoutBtn").onclick=()=>signOut(auth);
 $("saveProfile").onclick=async()=>{const name=$("newDisplayName").value.trim();if(name.length<2)return toast("Name too short");await updateProfile(currentUser,{displayName:name});await updateDoc(doc(db,"users",currentUser.uid),{name});$("profileName").textContent=name;toast("Profile saved");};
 
@@ -92,11 +136,9 @@ function renderPeople(forChat = false) {
   const target = forChat ? $("chatPeople") : $("usersGrid");
   const filter = (forChat ? $("peopleSearch").value : $("userSearch").value).toLowerCase();
 
-  // 👻 EXACT SNAPCHAT CHAT LIST LOGIC 👻
   if (forChat) {
     const myFriends = peopleCache.filter(p => friendsList.includes(p.uid) && ((p.name || "").toLowerCase().includes(filter) || (p.username || "").toLowerCase().includes(filter)));
     target.innerHTML = myFriends.map((p, index) => {
-      // Fake dynamic status to look exactly like the screenshot design (Red, Purple, Blue)
       const c = index % 3;
       let color = "red", text = "New Snap · 13m", icon = "status-sq red";
       if(c === 1) { color = "purple"; text = "2 New Snaps · 1h"; icon = "status-sq purple"; }
