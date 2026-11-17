@@ -15,13 +15,12 @@
     body { margin: 0; padding: 0; background: var(--bg); color: var(--text); overflow: hidden; }
     .hidden { display: none !important; }
     
-    /* App Layout */
     #app { display: flex; flex-direction: column; height: 100vh; background: #fff; }
     .content { flex: 1; overflow-y: hidden; position: relative; display: flex; flex-direction: column;}
     .page { display: none; height: 100%; overflow-y: auto; }
     .page.active { display: block; }
     
-    /* 👻 SNAPCHAT CHAT UI REPLICA 👻 */
+    /* Snapchat Chat UI */
     #chatBlank { position: relative; background: #fff; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
     .snap-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; }
     .snap-header-left, .snap-header-right { display: flex; gap: 10px; align-items: center; }
@@ -34,13 +33,11 @@
     .snap-pill { padding: 6px 14px; background: #f2f2f2; border-radius: 20px; font-size: 14px; font-weight: 600; color: #111; white-space: nowrap; display:flex; align-items:center; gap:5px; }
     .snap-pill.dark { background: #111; color: #fff; }
     
-    .snap-fab { position: absolute; bottom: 20px; right: 20px; width: 55px; height: 55px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); cursor: pointer; z-index: 10; }
-    
     .person-row { display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #f9f9f9; background: #fff; cursor: pointer; }
     .avatar-wrap { position: relative; margin-right: 15px; }
     .avatar-wrap .avatar { width: 52px; height: 52px; border-radius: 50%; background: #eee; border: 2.5px solid #a33cf7; padding: 2px; background-clip: content-box; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; color: #333; }
     .chat-details { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
-    .chat-details b { font-size: 17px; font-weight: 600; color: #000; letter-spacing: -0.3px; margin-bottom: 2px;}
+    .chat-details b { font-size: 17px; font-weight: 600; color: #000; margin-bottom: 2px;}
     .chat-status { display: flex; align-items: center; font-size: 12.5px; font-weight: 600; }
     .status-sq { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
     .status-sq.red { background: #ed3b55; }
@@ -49,7 +46,6 @@
     .chat-status.red { color: #ed3b55; }
     .chat-status.purple { color: #a33cf7; }
     .chat-status.blue { color: #007aff; }
-    .chat-action { padding-left: 10px; color: #333; display: flex; align-items: center; }
 
     /* General Styles */
     .nav-bar { display: flex; justify-content: space-around; align-items:center; background: #fff; padding: 12px 0; border-top: 1px solid #eee; padding-bottom: env(safe-area-inset-bottom, 15px); }
@@ -57,10 +53,12 @@
     .nav-item.active { opacity: 1; transform: scale(1.15); filter: none; }
     #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 12px 24px; border-radius: 25px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 9999; font-weight: bold; text-align:center; max-width:90%; }
     #toast.show { opacity: 1; top: 40px; }
+    
     #cameraContainer { position: relative; height: 100%; background: #000; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;}
     video, img.preview { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
     .cam-controls { position: absolute; bottom: 30px; z-index: 10; display: flex; gap: 12px; width: 100%; justify-content: center; align-items: center; }
     #captureBtn { width: 75px; height: 75px; border-radius: 50%; border: 6px solid #fff; background: rgba(255,255,255,0.3); cursor: pointer; }
+    
     .chat-container { display: flex; flex-direction: column; height: 100%; background: #fff;}
     .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
     .bubble { max-width: 75%; border-radius: 20px; padding: 12px 16px; font-size: 16px; border-bottom-left-radius: 4px; border: 1px solid #eee; background: #fff; align-self: flex-start;}
@@ -68,11 +66,16 @@
     .chat-input { display: flex; gap: 10px; padding: 15px; background: #fff; border-top: 1px solid #eee; }
     .chat-input input { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 25px; outline: none; background: #f5f5f5;}
     .chat-input button { background: var(--primary); border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; }
+    
     #storiesGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px; }
     .story-card { border-radius: 12px; overflow: hidden; position: relative; height: 250px; background: #000; display: flex; flex-direction: column;}
     .story-media img, .story-media video { height: 100%; width: 100%; object-fit: cover; opacity: 0.8; }
     .story-card b { position: absolute; bottom: 10px; left: 10px; color: white; text-shadow: 1px 1px 4px rgba(0,0,0,0.9); z-index: 2; font-size: 15px;}
     button.primary { background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    
+    /* Send Snap Modal Overlay */
+    #sendSnapModal { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999; display:flex; flex-direction:column; justify-content:flex-end; }
+    .snap-modal-box { background:#fff; width:100%; max-height:75vh; border-top-left-radius:25px; border-top-right-radius:25px; padding:20px; display:flex; flex-direction:column; }
     
     /* Auth Screen */
     #authScreen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--primary); padding: 20px; }
@@ -85,6 +88,17 @@
 <body>
   <div id="toast">Message</div>
   
+  <!-- Send Snap Modal (Popup to choose friend) -->
+  <div id="sendSnapModal" class="hidden">
+    <div class="snap-modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 style="margin:0;">Send Snap to...</h3>
+        <button id="closeSnapModal" style="background:#eee; border:none; border-radius:50%; width:35px; height:35px; font-weight:bold; cursor:pointer;">✕</button>
+      </div>
+      <div id="friendsSelectList" style="flex:1; overflow-y:auto; max-height:50vh;"></div>
+    </div>
+  </div>
+
   <!-- Login / Signup Screen -->
   <div id="authScreen">
     <div class="auth-box">
@@ -125,7 +139,7 @@
             <button id="captureBtn"></button>
             <button class="primary hidden" id="beautyBtn" style="background: #fff; border-radius: 15px; padding: 8px 10px; font-weight: bold; font-size: 13px;">✨ Smooth</button>
             <button class="primary hidden" id="downloadBtn" style="background:#fff; width:42px; height:42px; border-radius:50%; font-size:18px;" title="Save to Gallery">⬇️</button>
-            <button class="primary hidden" id="publishStory" style="padding: 10px 16px; font-size:14px;">➤ Send</button>
+            <button class="primary hidden" id="openSendModalBtn" style="background:var(--primary); padding: 10px 18px; font-size:14px; font-weight:bold; border-radius:20px; border:none;">➤ Send Snap</button>
           </div>
         </div>
       </div>
@@ -166,10 +180,6 @@
           <div style="padding: 0 15px 5px;"><input type="text" id="peopleSearch" placeholder="Search chats..." style="width:100%; padding:8px 15px; border-radius:20px; border:none; background:#f2f2f2; font-size:14px; outline:none;"></div>
           
           <div id="chatPeople" style="flex:1; overflow-y:auto; padding-bottom:80px;"></div>
-          
-          <div class="snap-fab">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-          </div>
         </div>
         
         <div id="chatBox" class="chat-container hidden">
@@ -178,8 +188,10 @@
             <h3 id="chatTitle" style="margin:0; font-size:18px;">Chat</h3>
           </div>
           <div id="messages" class="messages"></div>
+          
+          <!-- Chat box snap display / text input -->
           <form id="messageForm" class="chat-input">
-            <input type="text" id="messageText" placeholder="Send a chat..." required autocomplete="off">
+            <input type="text" id="messageText" placeholder="Send a chat or snap..." autocomplete="off">
             <button type="submit">Send</button>
           </form>
         </div>
@@ -214,13 +226,13 @@
     document.getElementById("profileGoBtn").onclick = () => document.querySelectorAll("[data-page='profile']")[0]?.click();
     document.getElementById("startCamera").addEventListener("click", () => {
       document.getElementById("captureBtn").classList.remove("hidden");
-      document.getElementById("publishStory").classList.add("hidden");
+      document.getElementById("openSendModalBtn").classList.add("hidden");
       document.getElementById("discardMedia").classList.add("hidden");
       document.getElementById("downloadBtn").classList.add("hidden");
       document.getElementById("beautyBtn").classList.add("hidden");
     });
     document.getElementById("captureBtn").addEventListener("click", () => {
-      document.getElementById("publishStory").classList.remove("hidden");
+      document.getElementById("openSendModalBtn").classList.remove("hidden");
       document.getElementById("discardMedia").classList.remove("hidden");
       document.getElementById("downloadBtn").classList.remove("hidden");
       document.getElementById("beautyBtn").classList.remove("hidden");
@@ -228,20 +240,23 @@
     });
     document.getElementById("discardMedia").addEventListener("click", () => {
       document.getElementById("captureBtn").classList.remove("hidden");
-      document.getElementById("publishStory").classList.add("hidden");
+      document.getElementById("openSendModalBtn").classList.add("hidden");
       document.getElementById("discardMedia").classList.add("hidden");
       document.getElementById("downloadBtn").classList.add("hidden");
       document.getElementById("beautyBtn").classList.add("hidden");
     });
     document.getElementById("mediaFile").addEventListener("change", () => {
       setTimeout(() => {
-        document.getElementById("publishStory").classList.remove("hidden");
+        document.getElementById("openSendModalBtn").classList.remove("hidden");
         document.getElementById("discardMedia").classList.remove("hidden");
         document.getElementById("downloadBtn").classList.remove("hidden");
         document.getElementById("beautyBtn").classList.remove("hidden");
         document.getElementById("captureBtn").classList.add("hidden");
       }, 500);
     });
+    document.getElementById("closeSnapModal").onclick = () => {
+      document.getElementById("sendSnapModal").classList.add("hidden");
+    };
   </script>
 </body>
 </html>
